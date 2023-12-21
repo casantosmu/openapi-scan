@@ -1,6 +1,6 @@
 {
   "name": "openapi-scan",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "CLI tool for validating OpenAPI definitions",
   "license": "MIT",
   "repository": "casantosmu/openapi-scan",
