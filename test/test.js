@@ -2,21 +2,18 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it, after, before } from "node:test";
 import assert from "node:assert";
-import { execa } from "execa";
+import child_process from "node:child_process";
+import util from "node:util";
 import { startServer, stopServer } from "./mocks/server.js";
+
+const exec = util.promisify(child_process.exec);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const relativePathToAbsolute = (...paths) => path.join(__dirname, ...paths);
 
-const execute = (...args) => {
-  const cli = relativePathToAbsolute("..", "cli.js");
-  if (typeof args[0] === "object") {
-    return execa("node", [cli], args[0]);
-  }
-  return execa("node", [cli, ...args]);
-};
+const cli = relativePathToAbsolute("..", "cli.js");
 
 let serverUrl;
 
@@ -31,19 +28,15 @@ after(async () => {
 
 describe("CLI", () => {
   describe("When receives valid JSON OpenAPI specification from stdin", () => {
-    it("Should exit with 0", async () => {
-      const fixture = relativePathToAbsolute("fixtures", "fixture.json");
+    it("Should exit without error", async () => {
+      const fixture = relativePathToAbsolute("fixtures", "valid-oa3.json");
       const expected = {
-        exitCode: 0,
         stdout: "",
         stderr: "",
       };
 
-      const { exitCode, stdout, stderr } = await execute({
-        inputFile: fixture,
-      });
+      const { stdout, stderr } = await exec(`cat ${fixture} | node ${cli}`);
 
-      assert.strictEqual(exitCode, expected.exitCode);
       assert.strictEqual(stdout, expected.stdout);
       assert.strictEqual(stderr, expected.stderr);
     });
@@ -51,46 +44,28 @@ describe("CLI", () => {
 
   describe("When receives invalid JSON OpenAPI specification from stdin", () => {
     it("Should exit with error", async () => {
-      const fixture = `
-        {
-          "openapi": "3.0.0",
-          "info": {
-            "title": "OpenAPI 3",
-            "version": "1.0.0"
-          },
-          "paths": {
-            "/hello": {
-              "invalid": "invalid"
-            }
-          }
-        }      
-      `;
+      const fixture = relativePathToAbsolute("fixtures", "invalid-oa3.json");
       const expected = {
-        exitCode: 1,
         stdout: "",
         stderr: new RegExp("Swagger schema validation failed."),
       };
 
-      const result = () => execute({ input: fixture });
+      const result = () => exec(`cat ${fixture} | node ${cli}`);
 
       await assert.rejects(result, expected);
     });
   });
 
   describe("When receives valid YAML OpenAPI specification from stdin", () => {
-    it("Should exit with 0", async () => {
-      const fixture = relativePathToAbsolute("fixtures", "fixture.yaml");
+    it("Should exit without error", async () => {
+      const fixture = relativePathToAbsolute("fixtures", "valid-oa3.yaml");
       const expected = {
-        exitCode: 0,
         stdout: "",
         stderr: "",
       };
 
-      const { exitCode, stdout, stderr } = await execute({
-        input: fixture,
-      });
+      const { stdout, stderr } = await exec(`cat ${fixture} | node ${cli}`);
 
-      assert.strictEqual(exitCode, expected.exitCode);
       assert.strictEqual(stdout, expected.stdout);
       assert.strictEqual(stderr, expected.stderr);
     });
@@ -98,22 +73,13 @@ describe("CLI", () => {
 
   describe("When receives invalid YAML OpenAPI specification from stdin", () => {
     it("Should exit with error", async () => {
-      const fixture = `
-        openapi: 3.0.0
-        info:
-          title: OpenAPI 3
-          version: 1.0.0
-        paths:
-          /hello:
-            invalid: invalid
-      `;
+      const fixture = relativePathToAbsolute("fixtures", "invalid-oa3.yaml");
       const expected = {
-        exitCode: 1,
         stdout: "",
         stderr: new RegExp("Swagger schema validation failed."),
       };
 
-      const result = () => execute({ input: fixture });
+      const result = () => exec(`cat ${fixture} | node ${cli}`);
 
       await assert.rejects(result, expected);
     });
@@ -121,22 +87,13 @@ describe("CLI", () => {
 
   describe("When receives invalid JSON from stdin", () => {
     it("Should exit with error", async () => {
-      const fixture = `
-        {
-          "openapi": "3.0.0"
-          "info": {
-            "title": "OpenAPI 3",
-            "version": "1.0.0"
-          }
-        }      
-      `;
+      const fixture = relativePathToAbsolute("fixtures", "invalid-json.json");
       const expected = {
-        exitCode: 1,
         stdout: "",
         stderr: new RegExp("^Invalid JSON or YAML"),
       };
 
-      const result = () => execute({ input: fixture });
+      const result = () => exec(`cat ${fixture} | node ${cli}`);
 
       await assert.rejects(result, expected);
     });
@@ -144,74 +101,91 @@ describe("CLI", () => {
 
   describe("When receives invalid YAML from stdin", () => {
     it("Should exit with error", async () => {
-      const fixture = `
-             openapi: 3.0.0
-        info:
-          title: OpenAPI 3
-          version: 1.0.0
-      `;
+      const fixture = relativePathToAbsolute("fixtures", "invalid-yaml.yaml");
       const expected = {
-        exitCode: 1,
         stdout: "",
         stderr: new RegExp("^Invalid JSON or YAML"),
       };
 
-      const result = () => execute({ input: fixture });
+      const result = () => exec(`cat ${fixture} | node ${cli}`);
 
       await assert.rejects(result, expected);
     });
   });
 
-  describe("When receives a valid JSON OpenAPI specification from --file flag", () => {
-    it("Should exit with 0", async () => {
-      const fixture = relativePathToAbsolute("fixtures", "fixture.json");
+  describe("When receives a valid JSON OpenAPI specification from a file path", () => {
+    it("Should exit without error", async () => {
+      const fixture = relativePathToAbsolute("fixtures", "valid-oa3.json");
       const expected = {
-        exitCode: 0,
         stdout: "",
         stderr: "",
       };
 
-      const { exitCode, stdout, stderr } = await execute(`--file=${fixture}`);
+      const { stdout, stderr } = await exec(`node ${cli} ${fixture}`);
 
-      assert.strictEqual(exitCode, expected.exitCode);
       assert.strictEqual(stdout, expected.stdout);
       assert.strictEqual(stderr, expected.stderr);
     });
   });
 
-  describe("When receives a valid YAML OpenAPI specification from --file flag", () => {
-    it("Should exit with 0", async () => {
-      const fixture = relativePathToAbsolute("fixtures", "fixture.yaml");
+  describe("When receives a valid YAML OpenAPI specification from a file path", () => {
+    it("Should exit without error", async () => {
+      const fixture = relativePathToAbsolute("fixtures", "valid-oa3.yaml");
       const expected = {
-        exitCode: 0,
         stdout: "",
         stderr: "",
       };
 
-      const { exitCode, stdout, stderr } = await execute(`--file=${fixture}`);
+      const { stdout, stderr } = await exec(`node ${cli} ${fixture}`);
 
-      assert.strictEqual(exitCode, expected.exitCode);
       assert.strictEqual(stdout, expected.stdout);
       assert.strictEqual(stderr, expected.stderr);
     });
   });
 
-  describe("When receives a valid OpenAPI specification from --url flag", () => {
-    it("Should exit with 0", async () => {
-      const fixture = "/fixture.json";
-      const expected = {
-        exitCode: 0,
-        stdout: "",
-        stderr: "",
-      };
-
-      const { exitCode, stdout, stderr } = await execute(
-        `--url=${serverUrl}${fixture}`,
+  describe("When receives an error from a file path", () => {
+    it("Should exit without error", async () => {
+      const fixture = relativePathToAbsolute(
+        "fixtures",
+        "non-existent-file-path.json",
       );
+      const expected = {
+        stdout: "",
+        stderr: new RegExp("^Error opening file"),
+      };
 
-      assert.strictEqual(exitCode, expected.exitCode);
+      const result = () => exec(`node ${cli} ${fixture}`);
+
+      await assert.rejects(result, expected);
+    });
+  });
+
+  describe("When receives a valid OpenAPI specification from a url", () => {
+    it("Should exit without error", async () => {
+      const fixture = `${serverUrl}/valid-oa3.json`;
+      const expected = {
+        stdout: "",
+        stderr: "",
+      };
+
+      const { stdout, stderr } = await exec(`node ${cli} ${fixture}`);
+
       assert.strictEqual(stdout, expected.stdout);
       assert.strictEqual(stderr, expected.stderr);
+    });
+  });
+
+  describe("When receives an error from a url", () => {
+    it("Should exit with error", async () => {
+      const fixture = `${serverUrl}/non-existent-file-path.json`;
+      const expected = {
+        stdout: "",
+        stderr: new RegExp(`^Error downloading ${fixture}`),
+      };
+
+      const result = () => exec(`node ${cli} ${fixture}`);
+
+      await assert.rejects(result, expected);
     });
   });
 });

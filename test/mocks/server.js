@@ -7,9 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const fixturesPath = path.join(__dirname, "..", "fixtures");
-const fixturesFilenames = new Set(
-  fs.readdirSync(fixturesPath).map((file) => `/${file}`),
-);
+const fixturesFilenames = new Set(fs.readdirSync(fixturesPath));
 
 const hostname = "127.0.0.1";
 const port = 0;
@@ -19,10 +17,10 @@ const mimeTypes = {
   ".yaml": "text/yaml; charset=UTF-8",
 };
 
-const requestListener = (request, response) => {
+const server = createServer((request, response) => {
   const { url } = request;
 
-  if (fixturesFilenames.has(url)) {
+  if (fixturesFilenames.has(url.replace(/^\//, ""))) {
     response.statusCode = 200;
     response.setHeader("Content-Type", mimeTypes[path.extname(url)]);
     fs.createReadStream(path.join(fixturesPath, url)).pipe(response);
@@ -31,9 +29,7 @@ const requestListener = (request, response) => {
     response.setHeader("Content-Type", "text/html; charset=utf-8");
     response.end("Not found");
   }
-};
-
-const server = createServer(requestListener);
+});
 
 export const startServer = () => {
   return new Promise((resolve, reject) => {

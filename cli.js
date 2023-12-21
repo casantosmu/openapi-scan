@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 
+import fs from "node:fs";
 import consumers from "node:stream/consumers";
 import SwaggerParser from "@apidevtools/swagger-parser";
 import yaml from "js-yaml";
 
-const { stdin, argv } = process;
-const arg = argv[2];
+const argv = process.argv.slice(2);
+const { stdin } = process;
 
 const handleError = (error) => {
   if (error) {
@@ -14,10 +15,14 @@ const handleError = (error) => {
   }
 };
 
-const definition =
-  arg?.startsWith("--file=") || arg?.startsWith("--url=")
-    ? arg.split("=", 2)[1]
-    : await consumers.text(stdin);
+const isPipedIn = await new Promise((resolve) => {
+  fs.fstat(0, (error, stats) => {
+    handleError(error);
+    resolve(stats.isFIFO());
+  });
+});
+
+const definition = isPipedIn ? await consumers.text(stdin) : argv[0];
 
 let json;
 try {
