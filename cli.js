@@ -16,11 +16,11 @@ const handleError = (error) => {
 
 const definition = argv[0] ?? (await consumers.text(stdin));
 
-let json;
+let api;
 try {
-  json = yaml.load(definition);
+  api = yaml.load(definition);
 } catch (error) {
   handleError(new Error(`Invalid JSON or YAML: ${error.message}`));
 }
 
-SwaggerParser.validate(json, handleError);
+SwaggerParser.validate(api, handleError);
