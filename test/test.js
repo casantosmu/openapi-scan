@@ -13,8 +13,6 @@ const __dirname = path.dirname(__filename);
 
 const relativePathToAbsolute = (...paths) => path.join(__dirname, ...paths);
 
-const cli = relativePathToAbsolute("..", "cli.js");
-
 let serverUrl;
 
 before(async () => {
@@ -26,6 +24,20 @@ after(async () => {
   await stopServer();
 });
 
+const execute = (argument) => {
+  const cli = relativePathToAbsolute("..", "cli.js");
+  if (typeof argument === "object" && "inputFile" in argument) {
+    const isWin = process.platform === "win32";
+    const { inputFile } = argument;
+    return exec(`${isWin ? "type" : "cat"} ${inputFile} | node ${cli}`);
+  } else if (typeof argument === "string") {
+    return exec(`node ${cli} ${argument}`);
+  }
+  throw new Error(
+    "Invalid argument for 'execute' function. It must be an object with 'inputFile' property or a string.",
+  );
+};
+
 describe("CLI", () => {
   describe("When receives valid JSON OpenAPI specification from stdin", () => {
     it("Should exit without error", async () => {
@@ -35,7 +47,7 @@ describe("CLI", () => {
         stderr: "",
       };
 
-      const { stdout, stderr } = await exec(`cat ${fixture} | node ${cli}`);
+      const { stdout, stderr } = await execute({ inputFile: fixture });
 
       assert.strictEqual(stdout, expected.stdout);
       assert.strictEqual(stderr, expected.stderr);
@@ -47,10 +59,10 @@ describe("CLI", () => {
       const fixture = relativePathToAbsolute("fixtures", "invalid-oa3.json");
       const expected = {
         stdout: "",
-        stderr: new RegExp("Swagger schema validation failed."),
+        stderr: new RegExp("^Swagger schema validation failed."),
       };
 
-      const result = () => exec(`cat ${fixture} | node ${cli}`);
+      const result = () => execute({ inputFile: fixture });
 
       await assert.rejects(result, expected);
     });
@@ -64,7 +76,7 @@ describe("CLI", () => {
         stderr: "",
       };
 
-      const { stdout, stderr } = await exec(`cat ${fixture} | node ${cli}`);
+      const { stdout, stderr } = await execute({ inputFile: fixture });
 
       assert.strictEqual(stdout, expected.stdout);
       assert.strictEqual(stderr, expected.stderr);
@@ -76,10 +88,10 @@ describe("CLI", () => {
       const fixture = relativePathToAbsolute("fixtures", "invalid-oa3.yaml");
       const expected = {
         stdout: "",
-        stderr: new RegExp("Swagger schema validation failed."),
+        stderr: new RegExp("^Swagger schema validation failed."),
       };
 
-      const result = () => exec(`cat ${fixture} | node ${cli}`);
+      const result = () => execute({ inputFile: fixture });
 
       await assert.rejects(result, expected);
     });
@@ -93,7 +105,7 @@ describe("CLI", () => {
         stderr: new RegExp("^Invalid JSON or YAML"),
       };
 
-      const result = () => exec(`cat ${fixture} | node ${cli}`);
+      const result = () => execute({ inputFile: fixture });
 
       await assert.rejects(result, expected);
     });
@@ -107,7 +119,7 @@ describe("CLI", () => {
         stderr: new RegExp("^Invalid JSON or YAML"),
       };
 
-      const result = () => exec(`cat ${fixture} | node ${cli}`);
+      const result = () => execute({ inputFile: fixture });
 
       await assert.rejects(result, expected);
     });
@@ -121,7 +133,7 @@ describe("CLI", () => {
         stderr: "",
       };
 
-      const { stdout, stderr } = await exec(`node ${cli} ${fixture}`);
+      const { stdout, stderr } = await execute(fixture);
 
       assert.strictEqual(stdout, expected.stdout);
       assert.strictEqual(stderr, expected.stderr);
@@ -136,7 +148,7 @@ describe("CLI", () => {
         stderr: "",
       };
 
-      const { stdout, stderr } = await exec(`node ${cli} ${fixture}`);
+      const { stdout, stderr } = await execute(fixture);
 
       assert.strictEqual(stdout, expected.stdout);
       assert.strictEqual(stderr, expected.stderr);
@@ -147,14 +159,14 @@ describe("CLI", () => {
     it("Should exit without error", async () => {
       const fixture = relativePathToAbsolute(
         "fixtures",
-        "non-existent-file-path.json",
+        "non-existent-file.json",
       );
       const expected = {
         stdout: "",
         stderr: new RegExp("^Error opening file"),
       };
 
-      const result = () => exec(`node ${cli} ${fixture}`);
+      const result = () => execute(fixture);
 
       await assert.rejects(result, expected);
     });
@@ -168,7 +180,7 @@ describe("CLI", () => {
         stderr: "",
       };
 
-      const { stdout, stderr } = await exec(`node ${cli} ${fixture}`);
+      const { stdout, stderr } = await execute(fixture);
 
       assert.strictEqual(stdout, expected.stdout);
       assert.strictEqual(stderr, expected.stderr);
@@ -177,13 +189,13 @@ describe("CLI", () => {
 
   describe("When receives an error from a url", () => {
     it("Should exit with error", async () => {
-      const fixture = `${serverUrl}/non-existent-file-path.json`;
+      const fixture = `${serverUrl}/non-existent-file.json`;
       const expected = {
         stdout: "",
         stderr: new RegExp(`^Error downloading ${fixture}`),
       };
 
-      const result = () => exec(`node ${cli} ${fixture}`);
+      const result = () => execute(fixture);
 
       await assert.rejects(result, expected);
     });

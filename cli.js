@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import fs from "node:fs";
 import consumers from "node:stream/consumers";
 import SwaggerParser from "@apidevtools/swagger-parser";
 import yaml from "js-yaml";
@@ -15,14 +14,7 @@ const handleError = (error) => {
   }
 };
 
-const isPipedIn = await new Promise((resolve) => {
-  fs.fstat(0, (error, stats) => {
-    handleError(error);
-    resolve(stats.isFIFO());
-  });
-});
-
-const definition = isPipedIn ? await consumers.text(stdin) : argv[0];
+const definition = argv[0] ?? (await consumers.text(stdin));
 
 let json;
 try {
