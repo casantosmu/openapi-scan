@@ -1,0 +1,45 @@
+{
+  "name": "openapi-scan",
+  "version": "0.0.0",
+  "description": "CLI tool for validating OpenAPI definitions",
+  "license": "MIT",
+  "repository": "casantosmu/openapi-scan",
+  "author": {
+    "name": "Carlos Santos",
+    "email": "casantosmu@gmail.com",
+    "url": "https://github.com/casantosmu"
+  },
+  "type": "module",
+  "bin": "cli.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "test": "node --test",
+    "test:dev": "node --test --watch --inspect",
+    "lint": "prettier . --check && eslint .",
+    "lint:fix": "prettier . --write && eslint --fix ."
+  },
+  "files": [
+    "cli.js"
+  ],
+  "keywords": [
+    "openapi",
+    "swagger",
+    "validator",
+    "validation",
+    "CLI",
+    "JSON",
+    "YAML"
+  ],
+  "dependencies": {
+    "@apidevtools/swagger-parser": "^10.1.0",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.56.0",
+    "eslint-plugin-unicorn": "^49.0.0",
+    "execa": "^8.0.1",
+    "prettier": "3.1.1"
+  }
+}
