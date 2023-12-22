@@ -24,20 +24,23 @@ after(async () => {
   await stopServer();
 });
 
-const execute = (argument) => {
+const execute = (options) => {
   const cli = relativePathToAbsolute("..", "cli.js");
-  if (typeof argument === "object" && "inputFile" in argument) {
-    const isWin = process.platform === "win32";
-    const { inputFile } = argument;
-    return exec(`${isWin ? "type" : "cat"} ${inputFile} | node ${cli}`);
-  } else if (typeof argument === "string") {
-    return exec(`node ${cli} ${argument}`);
-  }
-  throw new Error(
-    "Invalid argument for 'execute' function. It must be an object with 'inputFile' property or a string.",
-  );
-};
+  const isWin = process.platform === "win32";
+  const { fileToPipe, args } = options;
 
+  let command = `node ${cli}`;
+
+  if (fileToPipe) {
+    command = `${isWin ? "type" : "cat"} ${fileToPipe} | ${command}`;
+  }
+
+  if (args) {
+    command += ` ${args.join(" ")}`;
+  }
+
+  return exec(command);
+};
 describe("CLI", () => {
   describe("When receives valid JSON OpenAPI specification from stdin", () => {
     it("Should exit without error", async () => {
@@ -47,7 +50,7 @@ describe("CLI", () => {
         stderr: "",
       };
 
-      const { stdout, stderr } = await execute({ inputFile: fixture });
+      const { stdout, stderr } = await execute({ fileToPipe: fixture });
 
       assert.strictEqual(stdout, expected.stdout);
       assert.strictEqual(stderr, expected.stderr);
@@ -62,7 +65,7 @@ describe("CLI", () => {
         stderr: new RegExp("^Swagger schema validation failed."),
       };
 
-      const result = () => execute({ inputFile: fixture });
+      const result = () => execute({ fileToPipe: fixture });
 
       await assert.rejects(result, expected);
     });
@@ -76,7 +79,7 @@ describe("CLI", () => {
         stderr: "",
       };
 
-      const { stdout, stderr } = await execute({ inputFile: fixture });
+      const { stdout, stderr } = await execute({ fileToPipe: fixture });
 
       assert.strictEqual(stdout, expected.stdout);
       assert.strictEqual(stderr, expected.stderr);
@@ -91,7 +94,7 @@ describe("CLI", () => {
         stderr: new RegExp("^Swagger schema validation failed."),
       };
 
-      const result = () => execute({ inputFile: fixture });
+      const result = () => execute({ fileToPipe: fixture });
 
       await assert.rejects(result, expected);
     });
@@ -105,7 +108,7 @@ describe("CLI", () => {
         stderr: new RegExp("^Invalid JSON or YAML"),
       };
 
-      const result = () => execute({ inputFile: fixture });
+      const result = () => execute({ fileToPipe: fixture });
 
       await assert.rejects(result, expected);
     });
@@ -119,7 +122,7 @@ describe("CLI", () => {
         stderr: new RegExp("^Invalid JSON or YAML"),
       };
 
-      const result = () => execute({ inputFile: fixture });
+      const result = () => execute({ fileToPipe: fixture });
 
       await assert.rejects(result, expected);
     });
@@ -133,7 +136,7 @@ describe("CLI", () => {
         stderr: "",
       };
 
-      const { stdout, stderr } = await execute(fixture);
+      const { stdout, stderr } = await execute({ args: [fixture] });
 
       assert.strictEqual(stdout, expected.stdout);
       assert.strictEqual(stderr, expected.stderr);
@@ -148,7 +151,7 @@ describe("CLI", () => {
         stderr: "",
       };
 
-      const { stdout, stderr } = await execute(fixture);
+      const { stdout, stderr } = await execute({ args: [fixture] });
 
       assert.strictEqual(stdout, expected.stdout);
       assert.strictEqual(stderr, expected.stderr);
@@ -166,7 +169,7 @@ describe("CLI", () => {
         stderr: new RegExp("^Error opening file"),
       };
 
-      const result = () => execute(fixture);
+      const result = () => execute({ args: [fixture] });
 
       await assert.rejects(result, expected);
     });
@@ -180,7 +183,7 @@ describe("CLI", () => {
         stderr: "",
       };
 
-      const { stdout, stderr } = await execute(fixture);
+      const { stdout, stderr } = await execute({ args: [fixture] });
 
       assert.strictEqual(stdout, expected.stdout);
       assert.strictEqual(stderr, expected.stderr);
@@ -195,7 +198,7 @@ describe("CLI", () => {
         stderr: new RegExp(`^Error downloading ${fixture}`),
       };
 
-      const result = () => execute(fixture);
+      const result = () => execute({ args: [fixture] });
 
       await assert.rejects(result, expected);
     });
