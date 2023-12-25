@@ -1,6 +1,6 @@
 {
   "name": "openapi-scan",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "CLI tool for validating OpenAPI definitions",
   "license": "MIT",
   "repository": "casantosmu/openapi-scan",
@@ -37,8 +37,7 @@
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {
-    "eslint": "^8.56.0",
-    "eslint-plugin-unicorn": "^49.0.0",
+    "@casantosmu/eslint-config": "^0.0.0",
     "prettier": "3.1.1"
   }
 }
