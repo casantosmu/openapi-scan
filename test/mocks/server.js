@@ -31,25 +31,24 @@ const server = createServer((request, response) => {
   }
 });
 
-export const startServer = () => {
-  return new Promise((resolve, reject) => {
+export const startServer = () =>
+  new Promise((resolve, reject) => {
     server.listen(port, hostname, () => {
-      const port = server.address().port;
+      const { port } = server.address();
       console.log(`Server running at http://${hostname}:${port}`);
       resolve({ port, hostname });
     });
     server.once("error", reject);
   });
-};
 
-export const stopServer = () => {
-  return new Promise((resolve, reject) =>
+export const stopServer = () =>
+  new Promise((resolve, reject) => {
     server.close((error) => {
       if (error) {
         reject(error);
         return;
       }
+
       resolve();
-    }),
-  );
-};
+    });
+  });

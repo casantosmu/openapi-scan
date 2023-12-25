@@ -1,17 +1,3 @@
 {
-  "env": {
-    "node": true
-  },
-  "extends": ["eslint:recommended", "plugin:unicorn/recommended"],
-  "rules": {
-    "unicorn/no-process-exit": "off",
-    "unicorn/prevent-abbreviations": [
-      "error",
-      {
-        "replacements": {
-          "args": false
-        }
-      }
-    ]
-  }
+  "extends": ["@casantosmu"]
 }

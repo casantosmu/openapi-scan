@@ -2,11 +2,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it, after, before } from "node:test";
 import assert from "node:assert";
-import child_process from "node:child_process";
+import childProcess from "node:child_process";
 import util from "node:util";
 import { startServer, stopServer } from "./mocks/server.js";
 
-const exec = util.promisify(child_process.exec);
+const exec = util.promisify(childProcess.exec);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -41,6 +41,7 @@ const execute = (options) => {
 
   return exec(command);
 };
+
 describe("CLI", () => {
   describe("When receives valid JSON OpenAPI specification from stdin", () => {
     it("Should exit without error", async () => {
@@ -62,7 +63,7 @@ describe("CLI", () => {
       const fixture = relativePathToAbsolute("fixtures", "invalid-oa3.json");
       const expected = {
         stdout: "",
-        stderr: new RegExp("^Swagger schema validation failed."),
+        stderr: /^Swagger schema validation failed./,
       };
 
       const result = () => execute({ fileToPipe: fixture });
@@ -91,7 +92,7 @@ describe("CLI", () => {
       const fixture = relativePathToAbsolute("fixtures", "invalid-oa3.yaml");
       const expected = {
         stdout: "",
-        stderr: new RegExp("^Swagger schema validation failed."),
+        stderr: /^Swagger schema validation failed./,
       };
 
       const result = () => execute({ fileToPipe: fixture });
@@ -105,7 +106,7 @@ describe("CLI", () => {
       const fixture = relativePathToAbsolute("fixtures", "invalid-json.json");
       const expected = {
         stdout: "",
-        stderr: new RegExp("^Invalid JSON or YAML"),
+        stderr: /^Invalid JSON or YAML/,
       };
 
       const result = () => execute({ fileToPipe: fixture });
@@ -119,7 +120,7 @@ describe("CLI", () => {
       const fixture = relativePathToAbsolute("fixtures", "invalid-yaml.yaml");
       const expected = {
         stdout: "",
-        stderr: new RegExp("^Invalid JSON or YAML"),
+        stderr: /^Invalid JSON or YAML/,
       };
 
       const result = () => execute({ fileToPipe: fixture });
@@ -166,7 +167,7 @@ describe("CLI", () => {
       );
       const expected = {
         stdout: "",
-        stderr: new RegExp("^Error opening file"),
+        stderr: /^Error opening file/,
       };
 
       const result = () => execute({ args: [fixture] });
