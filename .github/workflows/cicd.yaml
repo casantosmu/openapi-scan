@@ -8,7 +8,7 @@ on:
 
 jobs:
   check-code:
-    name: Prettier and ESLint
+    name: Lint code
     runs-on: ubuntu-latest
 
     steps:
@@ -24,7 +24,7 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Run ESLint and Prettier
+      - name: Run linter
         run: npm run lint
 
   test:
