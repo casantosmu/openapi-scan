@@ -33,7 +33,7 @@
     "YAML"
   ],
   "dependencies": {
-    "@apidevtools/swagger-parser": "^10.1.0",
+    "@apidevtools/swagger-parser": "^11.0.1",
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {
